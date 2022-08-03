@@ -5,8 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
-use App\Http\Controllers\LikeController;
-
+use App\Http\Controllers\PictureController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\MessageController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -49,15 +51,17 @@ Route::group(['middleware' => ['auth:sanctum']], function() {
 
     // Like
     Route::post('/posts/{id}/likes', [LikeController::class, 'likeOrUnlike']); // like or dislike back a post
+
+
     //Messenger 
-    
-    Route::post('upload','PictureController@store');
-	Route::post('update','UserController@update');
-	Route::get('user','UserController@current');
-	Route::post('logout','ApiAuthController@logout');
-	Route::get('conversations','ConversationController@index');
-	Route::post('conversations','ConversationController@store');
-	Route::post('conversations/read','ConversationController@makConversationAsReaded');
-	Route::post('messages','MessageController@store');
-	Route::post('fcm','UserController@fcmToken');
+    Route::post('/upload', [PictureController::class, 'store']);
+    Route::post('/update', [UserController::class, 'update']);
+    Route::get('/user', [UserController::class, 'current']);
+
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::post('/conversations', [ConversationController::class, 'store']);
+
+    Route::post('/conversations/read', [ConversationController::class, 'makConversationAsReaded']);
+    Route::post('messages', [MessageController::class, 'store']);
+    Route::post('fcm', [UserController::class, 'fcmToken']);
 });
