@@ -49,4 +49,15 @@ Route::group(['middleware' => ['auth:sanctum']], function() {
 
     // Like
     Route::post('/posts/{id}/likes', [LikeController::class, 'likeOrUnlike']); // like or dislike back a post
+    //Messenger 
+    
+    Route::post('upload','PictureController@store');
+	Route::post('update','UserController@update');
+	Route::get('user','UserController@current');
+	Route::post('logout','ApiAuthController@logout');
+	Route::get('conversations','ConversationController@index');
+	Route::post('conversations','ConversationController@store');
+	Route::post('conversations/read','ConversationController@makConversationAsReaded');
+	Route::post('messages','MessageController@store');
+	Route::post('fcm','UserController@fcmToken');
 });
