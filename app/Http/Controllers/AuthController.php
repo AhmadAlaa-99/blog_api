@@ -3,94 +3,231 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Notifications\Notification;
+use App\Notifications\ActivateEmail;
+use App\Notifications\ResetPassword;
+use App\Mail\RegisterUserMail;
+use App\Mail\ForgottenPassword;
+use Illuminate\Support\Str;
+use App\http\Controllers\BaseController as BaseController;
 use App\Models\User;
+use Carbon\Carbon;
+use App\Models\ForgetPassword;
+use App\Models\UserActivateToken;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Validation\Rules\Password as RulesPassword;
 
-class AuthController extends Controller
+
+class AuthController extends BaseController
 {
-    //Register user
     public function register(Request $request)
     {
-        //validate fields
-        $attrs = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed'
-        ]);
+        $validator = Validator::make($request->all(),
+            [
+                'firstname' => 'required',
+                'lastname' => 'required',
+                'username' => 'required|unique:users|max:30',
+                'email' => 'required|email',
+                'phone' => 'required|numeric',
+                'country' => 'required',
+                'city' => 'required',
+                'address' => 'required',
+                'profile_image'=>'file|mimes:jpeg,bmp,png,pdf,doc,docx',
+                'password' => 'required',
+                'c_password' => 'required|same:password'
+            ]);
+        if ($validator->fails())
+        {
+            return $this->sendError('Validator Error', $validator->errors());
+        }
+        $input = $request->all();
 
-        //create user
-        $user = User::create([
-            'name' => $attrs['name'],
-            'email' => $attrs['email'],
-            'password' => bcrypt($attrs['password'])
-        ]);
+        $input['password'] = Hash::make($input['password']);
 
-        //return user & token in response
-        return response([
-            'user' => $user,
-            'token' => $user->createToken('secret')->plainTextToken
-        ], 200);
+        if($request->hasFile('profile_image'))
+        {
+            $image_name='profile_image-'.time().'.'.$request->profile_image->extension();
+            $request->profile_image->move(public_path('/upload/profile_images'),$image_name);
+            $input['profile_image']=$image_name;
+        }
+        
+        $user = User::create($input);
+        if($user)
+        {
+
+            $token=random_int(1000,9999);
+            $newToken=new UserActivateToken();
+            $newToken->user_id=$user->id;
+            $newToken->token=$token;
+            $newToken->save();
+       //     Mail::to(users:$user->email)->send(new RegisterUserMail($user,$token));
+        }
+        $success['id'] = $user->id;
+        $success['username'] = $user->username;
+        $success['firstname'] = $user->firstname;
+        $success['lastname'] = $user->lastname;
+        $success['email'] = $user->email;
+        $success['phone'] = $user->phone;
+        $success['address'] = $user->address;
+        $success['country'] = $user->country;
+        $success['city'] = $user->city;
+        $success['profile_image'] = $user->profile_image;
+        $success['code']=$token;
+        return $this->sendResponse($success, 'register send email');
+    }
+    public function ActivateEmail(Request $request)
+    {
+        $checkToken=UserActivateToken::where(['token'=>$request->code])->first();
+        if ($checkToken) 
+        {
+            $user_id=$checkToken->user_id;
+            $user=User::where(['id'=>$user_id])->first();
+            $user->email_verified_at=Carbon::now();
+            $user->save();
+            // to delete activate  $checkToken->delete();
+            //notify (database,broadcast)
+           // $user->notify(new ActivateEmail($user));
+            
+            return $this->sendResponse($user->createToken('usersocial')->accessToken, 'activate Successfully!');
+        }
     }
 
-    // login user
     public function login(Request $request)
     {
-        //validate fields
-        $attrs = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|min:6'
-        ]);
 
-        // attempt login
-        if(!Auth::attempt($attrs))
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+            $user = Auth::user();
+            
+            $success['token'] = $user->createToken('usersocial')->accessToken;
+            $success['id'] = $user->id;
+            $success['username'] = $user->username;
+            $success['firstname'] = $user->firstname;
+            $success['lastname'] = $user->lastname;
+            $success['email'] = $user->email;
+            $success['phone'] = $user->phone;
+            $success['address'] = $user->address;
+            $success['country'] = $user->country;
+            $success['city'] = $user->city;
+            $success['profile_image'] = $user->profile_image;
+            return $this->sendResponse($success, 'login Successfully!');
+        }
+        else
         {
-            return response([
-                'message' => 'Invalid credentials.'
-            ], 403);
+            return $this->sendError(' Error', ['error', 'Unauthorized']);
+        }
+    }
+
+    public function showinf()
+    {
+        $user=Auth::User();  //get : all user  first : user id=1   not userAuth
+        
+        return $this->sendResponse($user, 'AuthUser INF');
+    }
+
+    public function forgotPasswordCreate(Request $request)
+    {
+        $user=User::where('email',$request->email)->first();
+        if($user)
+        {
+            //error : Property [email] does not exist on the Eloquent builder instance
+            //solve : get email by array this error and not found get or fast 
+            //$user=User::where(['email'=>$request->email]);
+            //$user=User::where('email',$request->email)->first();
+            $Password=ForgetPassword::updateOrCreate(
+                ['email'=>$request->email],
+                    [
+                        'email'=>$request->email,
+                        'token'=>random_int(1000,9999),
+                    ]
+                    ); 
+       //  Mail::to($user->email)->send(new ForgottenPassword($Password));
+       //  $user->notify(new ResetPassword($user));
+         return $this->sendResponse($Password, 'link reset sent');
+        }
+        else
+        {
+            return $this->sendError(' Error', ['error', 'Unauthorized']);
         }
 
-        //return user & token in response
-        return response([
-            'user' => auth()->user(),
-            'token' => auth()->user()->createToken('secret')->plainTextToken
-        ], 200);
-    }
+     }
+ 
 
-    // logout user
-    public function logout()
+   public function forgotPasswordToken(Request $request)
+     {
+        $code=$request->token;
+         $checkReset=ForgetPassword::where([
+             'token'=>$code,
+             'email'=>$request->email,
+         ])->first();
+         if(!$checkReset)
+         {
+             return 'details not match';
+         }
+         $user=User::where('email',$request->email)->first();
+         if(!$user)
+         {
+             return 'user not found';
+         }
+         $user->password=bcrypt($request->password);
+         $user->save();
+         $checkReset->delete();
+         return $this->sendResponse($user, 'Reset Password Successfully!');
+
+
+    }
+ 
+    public function logout(Request $request)
     {
         auth()->user()->tokens()->delete();
-        return response([
-            'message' => 'Logout success.'
-        ], 200);
+       // $request->user()->currentAccessToken()->delete();
+        return $this->sendResponse('Logout','USER logout Successfully!');
+
     }
-
-    // get user details
-    public function user()
+    public function resetPassword(Request $request)
     {
-        return response([
-            'user' => auth()->user()
-        ], 200);
-    }
+        $validator=Validator::make(
+            $request->all(),
+            [
+                'oldpassword'=>'required',
+                'newpassword'=>'required',
+                'c_newpassword'=>'required|same:password'
+        
+            ]);
 
-    // update user
-    public function update(Request $request)
+            $user=Auth::User();
+            if ($request->oldpassword=$user->password)
+            {
+            $user->password=bcrypt($request->newpassword);
+             $user->save();  
+             return $this->sendResponse('r','reset password Successfully!'); 
+            }
+            return 'old password incorrect';
+        }
+
+    public function resetEmail()  
     {
-        $attrs = $request->validate([
-            'name' => 'required|string'
-        ]);
+        $validator=Validator::make(
+            $request->all(),
+            [
+                'password'=>'required',
+                'newEmail'=>'required',
+            ]);
 
-        $image = $this->saveImage($request->image, 'profiles');
+            $user=Auth::User();
+            $user->email_verified_at=Carbon::now();
+            if ($request->password=$user->password)
+            {
+                $user->email=$request->newEmail;
+            }
 
-        auth()->user()->update([
-            'name' => $attrs['name'],
-            'image' => $image
-        ]);
 
-        return response([
-            'message' => 'User updated.',
-            'user' => auth()->user()
-        ], 200);
     }
 
 }

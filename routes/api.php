@@ -17,9 +17,14 @@ use App\Http\Controllers\LikeController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-// Public routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+// Auth
+Route::post('register',[AuthController::class,'register']); //notify email
+Route::post('activate',[AuthController::class,'ActivateEmail']);  //with notify dtabase broadcast
+Route::post('login',[AuthController::class,'login'])->name('login'); 
+Route::post('forgotpasswordCreate', [AuthController::class, 'forgotPasswordCreate']);//notify email 
+Route::post('forgotpassword', [AuthController::class, 'forgotPasswordToken']);  //request code
+
+
 
 // Protected Routes
 Route::group(['middleware' => ['auth:sanctum']], function() {
