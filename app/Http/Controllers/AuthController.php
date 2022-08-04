@@ -35,10 +35,8 @@ class AuthController extends BaseController
                 'lastname' => 'required',
                 'username' => 'required|unique:users|max:30',
                 'email' => 'required|email',
-                'phone' => 'required|numeric',
+                'phone' => 'numeric',
                 'country' => 'required',
-                'city' => 'required',
-                'address' => 'required',
                 'profile_image'=>'file|mimes:jpeg,bmp,png,pdf,doc,docx',
                 'password' => 'required',
                 'c_password' => 'required|same:password'
@@ -48,20 +46,16 @@ class AuthController extends BaseController
             return $this->sendError('Validator Error', $validator->errors());
         }
         $input = $request->all();
-
         $input['password'] = Hash::make($input['password']);
-
         if($request->hasFile('profile_image'))
         {
             $image_name='profile_image-'.time().'.'.$request->profile_image->extension();
             $request->profile_image->move(public_path('/upload/profile_images'),$image_name);
             $input['profile_image']=$image_name;
         }
-        
         $user = User::create($input);
         if($user)
         {
-
             $token=random_int(1000,9999);
             $newToken=new UserActivateToken();
             $newToken->user_id=$user->id;
@@ -112,9 +106,9 @@ class AuthController extends BaseController
             $success['lastname'] = $user->lastname;
             $success['email'] = $user->email;
             $success['phone'] = $user->phone;
-            $success['address'] = $user->address;
+            
             $success['country'] = $user->country;
-            $success['city'] = $user->city;
+          
             $success['profile_image'] = $user->profile_image;
             return $this->sendResponse($success, 'login Successfully!');
         }
@@ -161,7 +155,18 @@ class AuthController extends BaseController
 
    public function forgotPasswordToken(Request $request)
      {
-        $code=$request->token;
+        $validator = Validator::make($request->all(),
+            [
+                'email'=>'required',
+                'code'=>'required',
+                'password' => 'required',
+                'c_password' => 'required|same:password',
+            ]);
+        if ($validator->fails())
+        {
+            return $this->sendError('Validator Error', $validator->errors());
+        }
+        $code=$request->code;
          $checkReset=ForgetPassword::where([
              'token'=>$code,
              'email'=>$request->email,
@@ -176,11 +181,21 @@ class AuthController extends BaseController
              return 'user not found';
          }
          $user->password=bcrypt($request->password);
+         $user->c_password=bcrypt($request->c_password);
          $user->save();
+         $success['token'] = $user->createToken('usersocial')->accessToken;
+            $success['id'] = $user->id;
+            $success['username'] = $user->username;
+            $success['firstname'] = $user->firstname;
+            $success['lastname'] = $user->lastname;
+            $success['email'] = $user->email;
+            $success['phone'] = $user->phone;
+            
+            $success['country'] = $user->country;
+          
+            $success['profile_image'] = $user->profile_image;
          $checkReset->delete();
-         return $this->sendResponse($user, 'Reset Password Successfully!');
-
-
+         return $this->sendResponse($success, 'Reset Password Successfully!');
     }
  
     public function logout(Request $request)
