@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Moels\Picture;
+use App\Models\Picture;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
