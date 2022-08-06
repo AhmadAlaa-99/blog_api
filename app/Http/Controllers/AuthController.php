@@ -63,6 +63,7 @@ class AuthController extends BaseController
             $newToken->save();
        //     Mail::to(users:$user->email)->send(new RegisterUserMail($user,$token));
         }
+        $success['token'] = $user->createToken('usersocial');
         $success['id'] = $user->id;
         $success['username'] = $user->username;
         $success['firstname'] = $user->firstname;
@@ -88,8 +89,9 @@ class AuthController extends BaseController
             // to delete activate  $checkToken->delete();
             //notify (database,broadcast)
            // $user->notify(new ActivateEmail($user));
-            
-            return $user->createToken('usersocial')->accessToken;
+           $success['token'] = $user->createToken('usersocial');
+           $success['id'] = $user->createToken('usersocial');
+           return $this->sendResponse($success, 'login Successfully!');
         }
     }
 
@@ -99,7 +101,7 @@ class AuthController extends BaseController
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
             
-            $success['token'] = $user->createToken('usersocial')->accessToken;
+            $success['token'] = $user->createToken('usersocial');
             $success['id'] = $user->id;
             $success['username'] = $user->username;
             $success['firstname'] = $user->firstname;
@@ -183,7 +185,7 @@ class AuthController extends BaseController
          $user->password=bcrypt($request->password);
          $user->c_password=bcrypt($request->c_password);
          $user->save();
-         $success['token'] = $user->createToken('usersocial')->accessToken;
+         $success['token'] = $user->createToken('usersocial');
             $success['id'] = $user->id;
             $success['username'] = $user->username;
             $success['firstname'] = $user->firstname;
