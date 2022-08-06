@@ -89,7 +89,7 @@ class AuthController extends BaseController
             //notify (database,broadcast)
            // $user->notify(new ActivateEmail($user));
             
-            return $this->sendResponse($user->createToken('usersocial')->accessToken, 'activate Successfully!');
+            return $user->createToken('usersocial')->accessToken;
         }
     }
 
