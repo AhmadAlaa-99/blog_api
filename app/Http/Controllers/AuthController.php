@@ -43,7 +43,7 @@ class AuthController extends BaseController
             ]);
         if ($validator->fails())
         {
-            return $this->sendError('Validator Error', $validator->errors());
+            return $this->sendError($validator->errors()->first());
         }
         $input = $request->all();
         $input['password'] = Hash::make($input['password']);
@@ -63,16 +63,16 @@ class AuthController extends BaseController
             $newToken->save();
        //     Mail::to(users:$user->email)->send(new RegisterUserMail($user,$token));
         }
-        $success['token'] = $user->createToken('usersocial');
+        $success['token'] = $user->createToken('secret')->plainTextToken;
         $success['id'] = $user->id;
         $success['username'] = $user->username;
         $success['firstname'] = $user->firstname;
         $success['lastname'] = $user->lastname;
         $success['email'] = $user->email;
         $success['phone'] = $user->phone;
-        $success['address'] = $user->address;
+     //   $success['address'] = $user->address;
         $success['country'] = $user->country;
-        $success['city'] = $user->city;
+       // $success['city'] = $user->city;
         $success['profile_image'] = $user->profile_image;
         $success['code']=$token;
         return $this->sendResponse($success, 'register send email');
@@ -89,8 +89,8 @@ class AuthController extends BaseController
             // to delete activate  $checkToken->delete();
             //notify (database,broadcast)
            // $user->notify(new ActivateEmail($user));
-           $success['token'] = $user->createToken('usersocial');
-           $success['id'] = $user->createToken('usersocial');
+           $success['token'] = $user->createToken('secret')->plainTextToken;
+           $success['id'] = $user->id;
            return $this->sendResponse($success, 'login Successfully!');
         }
     }
@@ -101,7 +101,7 @@ class AuthController extends BaseController
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
             
-            $success['token'] = $user->createToken('usersocial');
+            $success['token'] = $user->createToken('secret')->plainTextToken;
             $success['id'] = $user->id;
             $success['username'] = $user->username;
             $success['firstname'] = $user->firstname;
@@ -185,7 +185,7 @@ class AuthController extends BaseController
          $user->password=bcrypt($request->password);
          $user->c_password=bcrypt($request->c_password);
          $user->save();
-         $success['token'] = $user->createToken('usersocial');
+         $success['token'] = $user->createToken('secret')->plainTextToken;
             $success['id'] = $user->id;
             $success['username'] = $user->username;
             $success['firstname'] = $user->firstname;
