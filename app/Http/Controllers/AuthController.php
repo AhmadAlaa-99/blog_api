@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Validation\Rules\Password as RulesPassword;
+use Http;
 
 
 class AuthController extends BaseController
@@ -46,6 +47,7 @@ class AuthController extends BaseController
             return $this->sendError($validator->errors()->first());
         }
         $input = $request->all();
+        $input['fcm_token']=$request->fcm_token;
         $input['password'] = Hash::make($input['password']);
         if($request->hasFile('profile_image'))
         {
@@ -65,6 +67,7 @@ class AuthController extends BaseController
         }
         $success['token'] = $user->createToken('secret')->plainTextToken;
         $success['id'] = $user->id;
+        $success['fcm_token'] = $user->fcm_token;
         $success['username'] = $user->username;
         $success['firstname'] = $user->firstname;
         $success['lastname'] = $user->lastname;
@@ -76,6 +79,51 @@ class AuthController extends BaseController
         $success['profile_image'] = $user->profile_image;
         $success['code']=$token;
         return $this->sendResponse($success, 'register send email');
+    }
+    public function refreshToken(Request $request)
+    {
+                $user_id=$request->user_id;
+                $fcm_token=$request->fcm_token;
+                $user=User::where('id',$user_id)->update(['fcm_token'=>$request->fcm_token]);
+                return User::find($user_id);
+    }
+    public function sendNotification(Request $request)
+
+    {
+        $user_id=$request->user_id;
+        $fcm_token=User::find($user_id)->fcm_token;
+        $server_key=env('FCM_SERVER_KEY');
+        $fcm=Http::acceptJson()->withToken($server_key)->post(
+            'https://fcm.googleapis.com/fcm/send',
+            [
+                'to'=>$fcm_token,
+                'notifications'=>
+                [
+                    'title'=>'hello',
+                    'body'=>'welcome notify'
+                ]
+            ]
+                );
+                
+                return json_decode($fcm);
+    }
+    public function sendNotifyBroadcast(Request $request)
+    {
+        $user_ids=$request->user_ids;
+        $fcm_tokens=User::find($user_ids)->pluck('fcm_token');
+        $server_key=env('FCM_SERVER_KEY');
+        $fcm=Http::acceptJson()->withToken($server_key)->post(
+            'https://fcm.googleapis.com/fcm/send',
+            [
+                'to'=>$fcm_tokens,
+                'notifications'=>
+                [
+                    'title'=>'hello',
+                    'body'=>'welcome notify broadcast'
+                ]
+            ]
+                );
+                return json_decode($fcm);
     }
     public function ActivateEmail(Request $request)
     {
@@ -140,7 +188,7 @@ class AuthController extends BaseController
                 ['email'=>$request->email],
                     [
                         'email'=>$request->email,
-                        'token'=>random_int(1000,9999),
+                        'code'=>random_int(1000,9999),
                     ]
                     ); 
        //  Mail::to($user->email)->send(new ForgottenPassword($Password));
@@ -170,7 +218,7 @@ class AuthController extends BaseController
         }
         $code=$request->code;
          $checkReset=ForgetPassword::where([
-             'token'=>$code,
+             'code'=>$code,
              'email'=>$request->email,
          ])->first();
          if(!$checkReset)

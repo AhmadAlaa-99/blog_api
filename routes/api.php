@@ -9,6 +9,7 @@ use App\Http\Controllers\PictureController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\LikeController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -25,8 +26,6 @@ Route::post('activate',[AuthController::class,'ActivateEmail']);  //with notify 
 Route::post('login',[AuthController::class,'login'])->name('login'); 
 Route::post('forgotpasswordCreate', [AuthController::class, 'forgotPasswordCreate']);//notify email 
 Route::post('forgotpassword', [AuthController::class, 'forgotPasswordToken']);  //request code
-
-
 
 // Protected Routes
 Route::group(['middleware' => ['auth:sanctum']], function() {
@@ -50,7 +49,21 @@ Route::group(['middleware' => ['auth:sanctum']], function() {
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']); // delete a comment
 
     // Like
+
+
+
     Route::post('/posts/{id}/likes', [LikeController::class, 'likeOrUnlike']); // like or dislike back a post
+
+    
+    Route::get('/myProfile',[UserController::class,'myProfile']); 
+    Route::get('/Profile',[UserController::class,'Profile']); 
+    Route::post('/editProfile',[UserController::class,'editProfile']);  //name,photo
+    Route::post('/ChangePassword',[UserController::class,'ChangePassword']); 
+
+    Route::post('/search',[UserController::class,'search']);
+
+
+
 
 
     //Messenger 
@@ -64,4 +77,14 @@ Route::group(['middleware' => ['auth:sanctum']], function() {
     Route::post('/conversations/read', [ConversationController::class, 'makConversationAsReaded']);
     Route::post('messages', [MessageController::class, 'store']);
     Route::post('fcm', [UserController::class, 'fcmToken']);
+
+
+    Route::post('/DeleteAccount',[UserController::class,'DeleteAccount']);
+
+    //FCM 
+
 });
+Route::post('refresToken',[AuthController::class,'refreshToken']);
+Route::post('sendNotification',[AuthController::class,'sendNotification']);
+Route::post('sendNotifyBroadcast',[AuthController::class,'sendNotifyBroadcast']);
+
