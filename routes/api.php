@@ -10,6 +10,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\FriendController;
+use App\Http\Controllers\FriendRequestController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -49,17 +51,23 @@ Route::group(['middleware' => ['auth:sanctum']], function() {
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']); // delete a comment
 
     // Like
-
-
-
     Route::post('/posts/{id}/likes', [LikeController::class, 'likeOrUnlike']); // like or dislike back a post
 
-    
+    //FRIENDS 
+    Route::post('friends', [FriendController::class, 'friends']);
+    Route::post('friendrequest', [FriendRequestController::class, 'checkFriendRequest']);
+    Route::post('friendrequests', [FriendRequestController::class, 'friendRequests']);
+    Route::post('acceptfriendrequest', [FriendRequestController::class, 'acceptRequest']);
+    Route::post('refusefriendrequest', [FriendRequestController::class, 'refuseRequest']);
+    Route::post('cancelfriendrequest', [FriendRequestController::class, 'cancelFriendRequest']);
+    Route::post('unfriend', [FriendController::class, 'unFriend']);
+///
+
+
     Route::get('/myProfile',[UserController::class,'myProfile']); 
     Route::get('/Profile',[UserController::class,'Profile']); 
     Route::post('/editProfile',[UserController::class,'editProfile']);  //name,photo
     Route::post('/ChangePassword',[UserController::class,'ChangePassword']); 
-
     Route::post('/search',[UserController::class,'search']);
 
 

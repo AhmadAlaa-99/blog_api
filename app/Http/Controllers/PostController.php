@@ -12,7 +12,7 @@ class PostController extends Controller
     public function index()
     {
         return response([
-            'posts' => Post::orderBy('created_at', 'desc')->with('user:id,name,image')->withCount('comments', 'likes')
+            'posts' => Post::orderBy('created_at', 'desc')->with('user:id,username,profile_image')->withCount('comments', 'likes')
             ->with('likes', function($like){
                 return $like->where('user_id', auth()->user()->id)
                     ->select('id', 'user_id', 'post_id')->get();
@@ -32,6 +32,25 @@ class PostController extends Controller
     // create a post
     public function store(Request $request)
     {
+        $attrs =   $request->validate([
+            // 'message' => [Rule::requiredIf(function() use ($request) {
+            //     return !$request->hasFile('attachment');
+            // }), 'string'],
+            // 'attachment' => ['file'],
+            'body' => [
+                Rule::requiredIf(function() use ($request) {
+                    return !$request->input('image');
+                }),
+                'file|mimes:jpeg,bmp,png,pdf,doc,docx', 
+            ],
+            'image' => [
+                Rule::requiredIf(function() use ($request) {
+                    return !$request->input('body');
+                }),
+                'string', 
+            ],
+        ]);
+
         //validate fields
         $attrs = $request->validate([
             'body' => 'required|string'
