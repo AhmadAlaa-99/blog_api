@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Post;
+use Illuminate\Validation\Rule;
 
 class PostController extends Controller
 {
@@ -32,24 +33,7 @@ class PostController extends Controller
     // create a post
     public function store(Request $request)
     {
-        $attrs =   $request->validate([
-            // 'message' => [Rule::requiredIf(function() use ($request) {
-            //     return !$request->hasFile('attachment');
-            // }), 'string'],
-            // 'attachment' => ['file'],
-            'body' => [
-                Rule::requiredIf(function() use ($request) {
-                    return !$request->input('image');
-                }),
-                'file|mimes:jpeg,bmp,png,pdf,doc,docx', 
-            ],
-            'image' => [
-                Rule::requiredIf(function() use ($request) {
-                    return !$request->input('body');
-                }),
-                'string', 
-            ],
-        ]);
+     
 
         //validate fields
         $attrs = $request->validate([
