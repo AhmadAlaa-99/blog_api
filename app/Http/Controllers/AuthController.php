@@ -139,7 +139,8 @@ class AuthController extends BaseController
            // $user->notify(new ActivateEmail($user));
            $success['token'] = $user->createToken('secret')->plainTextToken;
            $success['id'] = $user->id;
-           return $this->sendResponse($success, 'login Successfully!');
+           
+         //  return $this->sendResponse($success, 'login Successfully!');
         }
     }
 
@@ -159,7 +160,12 @@ class AuthController extends BaseController
             $success['country'] = $user->country;
           
             $success['profile_image'] = $user->profile_image;
-            return $this->sendResponse($success, 'login Successfully!');
+            return response([
+                'id'=>auth()->user()->id,
+                'user' => auth()->user(),
+                'token' => auth()->user()->createToken('secret')->plainTextToken
+            ], 200);
+            //return $this->sendResponse(['success'=>$succes,'token'=>], 'login Successfully!');
         }
         else
         {
