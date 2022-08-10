@@ -101,7 +101,8 @@ class PostController extends Controller
         {
             return response([
                 'message' => 'Post not found.'
-            ], 403);
+            ]
+            , 403);
         }
 
         if($post->user_id != auth()->user()->id)

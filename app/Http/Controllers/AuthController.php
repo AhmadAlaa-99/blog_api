@@ -65,7 +65,7 @@ class AuthController extends BaseController
             $newToken->save();
        //     Mail::to(users:$user->email)->send(new RegisterUserMail($user,$token));
         }
-        $success['token'] = $user->createToken('secret')->plainTextToken;
+        //$success['token'] = $user->createToken('secret')->plainTextToken;
         $success['id'] = $user->id;
         $success['fcm_token'] = $user->fcm_token;
         $success['username'] = $user->username;
@@ -77,8 +77,15 @@ class AuthController extends BaseController
         $success['country'] = $user->country;
        // $success['city'] = $user->city;
         $success['profile_image'] = $user->profile_image;
-        $success['code']=$token;
-        return $this->sendResponse($success, 'register send email');
+      //  $success['code']=$token;
+        return response([
+            'id'=>auth()->user()->id,
+            'token' => auth()->user()->createToken('secret')->plainTextToken,
+            'code'=>$token,
+            'user' => auth()->user(),
+            
+        ], 200);
+       // return $this->sendResponse($success, 'register send email');
     }
     public function refreshToken(Request $request)
     {
@@ -137,8 +144,12 @@ class AuthController extends BaseController
             // to delete activate  $checkToken->delete();
             //notify (database,broadcast)
            // $user->notify(new ActivateEmail($user));
-           $success['token'] = $user->createToken('secret')->plainTextToken;
-           $success['id'] = $user->id;
+           //$success['token'] = $user->createToken('secret')->plainTextToken;
+         //  $success['id'] = $user->id;
+           return response([
+            'id'=>$user->id,
+            'token' =>$user->createToken('secret')->plainTextToken,
+        ], 200);
            
          //  return $this->sendResponse($success, 'login Successfully!');
         }
@@ -196,9 +207,17 @@ class AuthController extends BaseController
                         'code'=>random_int(1000,9999),
                     ]
                     ); 
+                    return response([
+                       
+                        
+                        'code'=>$Password->code,
+                        'email' => $Password->email,
+                        
+                    ], 200);
        //  Mail::to($user->email)->send(new ForgottenPassword($Password));
        //  $user->notify(new ResetPassword($user));
-         return $this->sendResponse($Password, 'link reset sent');
+       
+        // return $this->sendResponse($Password, 'link reset sent');
         }
         else
         {
@@ -249,7 +268,7 @@ class AuthController extends BaseController
             $success['country'] = $user->country;
           
             $success['profile_image'] = $user->profile_image;
-         $checkReset->delete();
+            $checkReset->delete();
          return $this->sendResponse($success, 'Reset Password Successfully!');
     }
  
@@ -275,8 +294,13 @@ class AuthController extends BaseController
             if ($request->oldpassword=$user->password)
             {
             $user->password=bcrypt($request->newpassword);
-             $user->save();  
-             return $this->sendResponse('r','reset password Successfully!'); 
+             $user->save(); 
+             return response([
+                'id'=>auth()->user()->id,
+                'user' => auth()->user(),
+                'token' => auth()->user()->createToken('secret')->plainTextToken
+            ], 200); 
+         ///    return $this->sendResponse('r','reset password Successfully!'); 
             }
             return 'old password incorrect';
         }
