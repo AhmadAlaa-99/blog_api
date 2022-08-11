@@ -24,19 +24,19 @@ class UserController extends BaseController
 
 
 	public function current()  {
-		return new UserResource(auth()->user());
+		return $user=Auth::user();
 	}
 
 	public function update(Request $request){
 		$request->validate([
-			'name'=>'required',
+			'user_name'=>'required',
 			'email'=>'required|email|unique:users,email,'.auth()->id()
 		]);
 		$user = User::find(auth()->id());
-		$user->name = $request['name'];
+		$user->user_name = $request['user_name'];
 		$user->email = $request['email'];
 		$user->save();
-		return new UserResource($user);
+		return $user;
 
 	}
 	public function myProfile()
